@@ -204,8 +204,8 @@ function render() {
                 ${info("ti-wifi", "Wi-Fi", `${suite.wifi} - ${suite.wifiPass}`)}
                 ${info("ti-door", "Code porte", suite.doorCode)}
                 ${info("ti-clock", "Horaires", `Arrivee ${suite.checkin || state.settings.checkin} / Depart ${suite.checkout || state.settings.checkout}`)}
-                ${info("ti-info-circle", "Arrivee", suite.arrivalInstructions)}
-                ${info("ti-tools-kitchen-2", "Minibar", suite.minibar)}
+                ${info("ti-swimming", "Piscine", suite.arrivalInstructions || "Horaires piscine : 10h00 - 20h00.")}
+                ${info("ti-tools-kitchen-2", "Petit-dejeuner", suite.minibar || "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant. Reservation avant 16h la veille.")}
                 ${info("ti-shield-check", "Regles", suite.rules)}
               </div>
             </div>

@@ -7,7 +7,7 @@ const sharedAccess = {
   parking: "Pas de parking privatif",
   checkin: "16:00",
   checkout: "10:00",
-  minibar: "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant.",
+  minibar: "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant. Reservation avant 16h la veille.",
   rules: "Les animaux ne sont pas acceptes. Logement non-fumeur. Merci de deposer les draps dans le sac mis a disposition avant votre depart.",
   arrivalInstructions: "Horaires piscine : 10h00 - 20h00."
 };
