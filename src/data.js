@@ -138,9 +138,9 @@ export const defaultState = {
     }
   ],
   temperatures: {
-    pool: { morning: "27", afternoon: "28", evening: "27" },
-    air: { morning: "22", afternoon: "26", evening: "21" },
-    sea: { morning: "20", afternoon: "21", evening: "20" },
+    pool: { value: "28" },
+    air: { value: "26" },
+    sea: { value: "21" },
     updatedAt: ""
   },
   services: [],

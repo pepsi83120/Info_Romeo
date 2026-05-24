@@ -1011,7 +1011,7 @@ select:focus {
 
 .guest-temp-grid {
   display: grid;
-  grid-template-columns: minmax(86px, .8fr) repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(86px, .8fr) minmax(0, 1fr);
   gap: 9px;
   align-items: center;
 }
@@ -1361,7 +1361,7 @@ select:focus {
   }
 
   .guest-temp-grid {
-    grid-template-columns: minmax(74px, .75fr) repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(74px, .75fr) minmax(0, 1fr);
     gap: 6px;
   }
 

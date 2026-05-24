@@ -182,7 +182,7 @@ function render() {
             <div class="panel-head">
               <div>
                 <div class="panel-title">Temperatures</div>
-                <div class="panel-sub">Piscine, air et mer selon le moment de la journee.</div>
+                <div class="panel-sub">Piscine, air et mer pour la journee.</div>
               </div>
             </div>
             <div class="panel-body">
@@ -334,7 +334,7 @@ function guestNotifications() {
       id: `temperatures-${state.temperatures.updatedAt}`,
       icon: "ti-temperature",
       title: "Temperatures mises a jour",
-      text: `Piscine ${state.temperatures.pool?.value || "-"} degres - Air ${state.temperatures.air?.value || "-"} degres`
+      text: `Piscine ${tempCurrentValue(state.temperatures.pool) || "-"} degres - Air ${tempCurrentValue(state.temperatures.air) || "-"} degres`
     });
   }
 
@@ -502,8 +502,9 @@ function modalBody(type, serviceId) {
         ${field("Date", "breakfast-date", today(), "date")}
         ${field("Heure souhaitee", "breakfast-time", "08:30", "time")}
         ${field("Nombre de personnes", "breakfast-people", "2", "number")}
-        ${select("Preference", "breakfast-style", breakfastOptions())}
-        ${area("Votre commande", "breakfast-order", state.settings.guestBreakfastDefaultOrder || "Cafe, jus frais, viennoiseries, fruits...")}
+        ${field("The", "breakfast-tea", "0", "number")}
+        ${field("Cafe", "breakfast-coffee", "0", "number")}
+        ${field("Chocolat chaud", "breakfast-chocolate", "0", "number")}
       </div>
       <div class="save-row">
         <span class="hint">Votre demande apparaitra dans le panel admin.</span>
@@ -561,7 +562,7 @@ function submitBreakfast() {
     date: value("breakfast-date"),
     time: value("breakfast-time"),
     people: Number(value("breakfast-people")) || 1,
-    order: `${value("breakfast-style")} - ${value("breakfast-order")}`,
+    order: hotDrinkOrder(),
     status: "new"
   });
   saveState(state);
@@ -747,7 +748,7 @@ function eventPlacesLeft(event) {
 function guestTemperatures(temperatures) {
   return `
     <div class="guest-temp-grid">
-      <div></div><span>Matin</span><span>Apres-midi</span><span>Soir</span>
+      <div></div><span>Journee</span>
       ${guestTempRow("Piscine", "ti-swimming", temperatures.pool)}
       ${guestTempRow("Air", "ti-wind", temperatures.air)}
       ${guestTempRow("Mer", "ti-waves", temperatures.sea)}
@@ -759,10 +760,12 @@ function guestTemperatures(temperatures) {
 function guestTempRow(label, icon, values = {}) {
   return `
     <strong><i class="ti ${icon}"></i>${label}</strong>
-    <b>${tempValue(values.morning)}</b>
-    <b>${tempValue(values.afternoon)}</b>
-    <b>${tempValue(values.evening)}</b>
+    <b>${tempValue(tempCurrentValue(values))}</b>
   `;
+}
+
+function tempCurrentValue(values = {}) {
+  return values.value || values.afternoon || values.morning || values.evening || "";
 }
 
 function tempValue(value) {
@@ -817,9 +820,13 @@ function select(label, id, options) {
   `;
 }
 
-function breakfastOptions() {
-  const raw = state.settings.guestBreakfastOptions || "Continental, Mediterraneen, Healthy, Sur mesure";
-  return raw.split(",").map(item => item.trim()).filter(Boolean).map(item => [item, item]);
+function hotDrinkOrder() {
+  const drinks = [
+    [Number(value("breakfast-tea")) || 0, "the"],
+    [Number(value("breakfast-coffee")) || 0, "cafe"],
+    [Number(value("breakfast-chocolate")) || 0, "chocolat chaud"]
+  ].filter(([count]) => count > 0);
+  return drinks.length ? `Boissons chaudes : ${drinks.map(([count, label]) => `${count} ${label}`).join(", ")}` : "Boissons chaudes a preciser";
 }
 
 function heroStyle(suite) {

@@ -1106,19 +1106,13 @@
   ],
   "temperatures": {
     "pool": {
-      "morning": "27",
-      "afternoon": "28",
-      "evening": "27"
+      "value": "28"
     },
     "air": {
-      "morning": "22",
-      "afternoon": "26",
-      "evening": "21"
+      "value": "26"
     },
     "sea": {
-      "morning": "20",
-      "afternoon": "21",
-      "evening": "20"
+      "value": "21"
     },
     "updatedAt": "15/05 21:17"
   },

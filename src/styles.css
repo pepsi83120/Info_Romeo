@@ -1144,6 +1144,32 @@ select:focus {
   gap: 10px;
 }
 
+.column-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+  color: var(--soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.column-picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255,255,255,.04);
+}
+
+.column-picker input {
+  accent-color: var(--gold-2);
+}
+
 .filter {
   min-width: 190px;
 }
@@ -1750,12 +1776,12 @@ tbody tr:hover td {
 
 .temperature-table {
   display: grid;
-  grid-template-columns: minmax(150px, .8fr) repeat(3, minmax(110px, 1fr));
+  grid-template-columns: minmax(150px, .8fr) minmax(110px, 1fr);
   gap: 10px;
   align-items: center;
 }
 
-.temperature-table > div:nth-child(-n+4) {
+.temperature-table > div:nth-child(-n+2) {
   color: var(--soft);
   text-transform: uppercase;
   letter-spacing: 1px;
