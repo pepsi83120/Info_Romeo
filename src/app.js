@@ -26,10 +26,9 @@ let toastTimer = null;
 let notificationSnapshot = localStorage.getItem(ADMIN_NOTIFICATION_SNAPSHOT_KEY) || "";
 let syncTimer = null;
 let filters = {
-  reservationStatus: "all",
+  reservationStatus: ["all"],
   reservationSuite: "all",
   reservationQuery: "",
-  reservationColumns: ["client", "suite", "dates", "channel", "total", "balance", "status", "actions"],
   taskStatus: "all",
   taskQuery: ""
 };
@@ -271,7 +270,7 @@ function bindGlobalEvents() {
 
   document.addEventListener("change", event => {
     const el = event.target;
-    if (el.dataset.reservationColumn) updateReservationColumns(el);
+    if (el.dataset.reservationStatus) updateReservationStatuses(el);
     if (el.dataset.live) updateLive(el);
     if (el.dataset.filter) updateFilter(el);
   });
@@ -744,7 +743,7 @@ function renderReservations() {
   const filtered = state.reservations.filter(r => {
     const query = filters.reservationQuery.toLowerCase();
     const suite = suiteName(r.suiteId).toLowerCase();
-    return (filters.reservationStatus === "all" || computedReservationStatus(r) === filters.reservationStatus)
+    return reservationStatusMatches(computedReservationStatus(r))
       && (filters.reservationSuite === "all" || Number(r.suiteId) === Number(filters.reservationSuite))
       && (!query || r.guest.toLowerCase().includes(query) || suite.includes(query) || r.channel.toLowerCase().includes(query));
   });
@@ -762,12 +761,11 @@ function renderReservations() {
         ${planningImportPanel()}
         <div class="table-tools">
           <div class="filters">
-            ${filterSelect("Statut", "reservationStatus", filters.reservationStatus, [["all","Tous"],["confirmed","Confirmee"],["inhouse","En sejour"],["checkout","Check-out"],["left","Sorti"],["raw","Sans description"]])}
             ${filterSelect("Logement", "reservationSuite", filters.reservationSuite, reservationSuiteOptions())}
             ${filterText("Recherche", "reservationQuery", filters.reservationQuery)}
           </div>
         </div>
-        ${reservationColumnPicker()}
+        ${reservationStatusPicker()}
         ${reservationTable(filtered)}
       </div>
     </div>
@@ -804,25 +802,24 @@ function planningImportPanel() {
 
 function reservationTable(items) {
   if (!items.length) return empty("Aucune reservation trouvee.");
-  const columns = reservationColumns();
-  const headers = {
-    client: "Client",
-    suite: "Logement",
-    dates: "Dates",
-    channel: "Canal",
-    total: "Total",
-    balance: "Solde",
-    status: "Statut",
-    actions: "Actions"
-  };
   return `
     <div class="table-wrap">
       <table>
-        <thead><tr>${columns.map(key => `<th>${headers[key]}</th>`).join("")}</tr></thead>
+        <thead><tr><th>Client</th><th>Logement</th><th>Dates</th><th>Canal</th><th>Total</th><th>Solde</th><th>Statut</th><th>Actions</th></tr></thead>
         <tbody>
           ${items.map(r => `
             <tr>
-              ${columns.map(key => reservationCell(key, r)).join("")}
+              <td><div class="table-title">${esc(r.guest)}</div><div class="table-muted">${esc(shortText(r.requests, 120))}</div></td>
+              <td>${esc(suiteName(r.suiteId))}</td>
+              <td>${fmtDate(r.arrival)} -> ${fmtDate(r.departure)}<div class="table-muted">${r.guests} pers.</div></td>
+              <td>${esc(r.channel)}</td>
+              <td>${formatMoney(r.total)}</td>
+              <td>${formatMoney(r.balance)}</td>
+              <td><span class="badge ${computedReservationStatus(r)}">${reservationStatus(computedReservationStatus(r))}</span></td>
+              <td>
+                <button class="btn small" data-action="edit-reservation" data-id="${r.id}"><i class="ti ti-edit"></i></button>
+                <button class="btn small danger" data-action="delete-reservation" data-id="${r.id}"><i class="ti ti-trash"></i></button>
+              </td>
             </tr>
           `).join("")}
         </tbody>
@@ -831,20 +828,13 @@ function reservationTable(items) {
   `;
 }
 
-function reservationColumns() {
-  const selected = Array.isArray(filters.reservationColumns) ? filters.reservationColumns : [];
-  const available = reservationColumnOptions().map(([key]) => key);
-  const visible = selected.filter(key => available.includes(key));
-  return visible.length ? visible : available;
-}
-
-function reservationColumnPicker() {
+function reservationStatusPicker() {
   return `
-    <div class="column-picker">
-      <span>Afficher</span>
-      ${reservationColumnOptions().map(([key, label]) => `
+    <div class="status-picker">
+      <span>Statuts</span>
+      ${reservationStatusOptions().map(([key, label]) => `
         <label>
-          <input type="checkbox" data-reservation-column="${key}" ${reservationColumns().includes(key) ? "checked" : ""}>
+          <input type="checkbox" data-reservation-status="${key}" ${reservationStatuses().includes(key) ? "checked" : ""}>
           ${label}
         </label>
       `).join("")}
@@ -852,25 +842,20 @@ function reservationColumnPicker() {
   `;
 }
 
-function reservationColumnOptions() {
-  return [["client", "Client"], ["suite", "Logement"], ["dates", "Dates"], ["channel", "Canal"], ["total", "Total"], ["balance", "Solde"], ["status", "Statut"], ["actions", "Actions"]];
+function reservationStatusOptions() {
+  return [["all", "Tous"], ["confirmed", "Confirmee"], ["inhouse", "En sejour"], ["checkout", "Check-out"], ["left", "Sorti"], ["raw", "Sans description"]];
 }
 
-function reservationCell(key, r) {
-  const cells = {
-    client: `<td><div class="table-title">${esc(r.guest)}</div><div class="table-muted">${esc(shortText(r.requests, 120))}</div></td>`,
-    suite: `<td>${esc(suiteName(r.suiteId))}</td>`,
-    dates: `<td>${fmtDate(r.arrival)} -> ${fmtDate(r.departure)}<div class="table-muted">${r.guests} pers.</div></td>`,
-    channel: `<td>${esc(r.channel)}</td>`,
-    total: `<td>${formatMoney(r.total)}</td>`,
-    balance: `<td>${formatMoney(r.balance)}</td>`,
-    status: `<td><span class="badge ${computedReservationStatus(r)}">${reservationStatus(computedReservationStatus(r))}</span></td>`,
-    actions: `<td>
-      <button class="btn small" data-action="edit-reservation" data-id="${r.id}"><i class="ti ti-edit"></i></button>
-      <button class="btn small danger" data-action="delete-reservation" data-id="${r.id}"><i class="ti ti-trash"></i></button>
-    </td>`
-  };
-  return cells[key] || "";
+function reservationStatuses() {
+  const selected = Array.isArray(filters.reservationStatus) ? filters.reservationStatus : [filters.reservationStatus || "all"];
+  const available = reservationStatusOptions().map(([key]) => key);
+  const visible = selected.filter(key => available.includes(key));
+  return visible.length ? visible : ["all"];
+}
+
+function reservationStatusMatches(status) {
+  const selected = reservationStatuses();
+  return selected.includes("all") || selected.includes(status);
 }
 
 
@@ -1885,11 +1870,16 @@ function updateFilter(el) {
   render();
 }
 
-function updateReservationColumns(el) {
-  const key = el.dataset.reservationColumn;
-  const selected = new Set(reservationColumns());
-  el.checked ? selected.add(key) : selected.delete(key);
-  filters.reservationColumns = Array.from(selected);
+function updateReservationStatuses(el) {
+  const key = el.dataset.reservationStatus;
+  let selected = new Set(reservationStatuses());
+  if (key === "all" && el.checked) {
+    selected = new Set(["all"]);
+  } else {
+    selected.delete("all");
+    el.checked ? selected.add(key) : selected.delete(key);
+  }
+  filters.reservationStatus = selected.size ? Array.from(selected) : ["all"];
   render();
 }
 
@@ -2742,7 +2732,7 @@ function eventDay(value) {
 }
 
 function temperatureIcon(key) {
-  return { pool: "ti-swimming", air: "ti-wind", sea: "ti-waves" }[key] || "ti-temperature";
+  return { pool: "ti-swimming", air: "ti-wind", sea: "ti-sailboat" }[key] || "ti-temperature";
 }
 
 function serviceDefaults() {

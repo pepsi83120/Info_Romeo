@@ -751,7 +751,7 @@ function guestTemperatures(temperatures) {
       <div></div><span>Journee</span>
       ${guestTempRow("Piscine", "ti-swimming", temperatures.pool)}
       ${guestTempRow("Air", "ti-wind", temperatures.air)}
-      ${guestTempRow("Mer", "ti-waves", temperatures.sea)}
+      ${guestTempRow("Mer", "ti-sailboat", temperatures.sea)}
     </div>
     <div class="temp-updated">Mis a jour ${esc(temperatures.updatedAt || "prochainement")}</div>
   `;

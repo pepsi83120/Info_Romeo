@@ -1144,7 +1144,7 @@ select:focus {
   gap: 10px;
 }
 
-.column-picker {
+.status-picker {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1155,7 +1155,7 @@ select:focus {
   font-weight: 800;
 }
 
-.column-picker label {
+.status-picker label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1166,7 +1166,7 @@ select:focus {
   background: rgba(255,255,255,.04);
 }
 
-.column-picker input {
+.status-picker input {
   accent-color: var(--gold-2);
 }
 
