@@ -1972,6 +1972,8 @@ function modalBody(type, id) {
       </div>
       <div class="save-row"><span class="hint">Choisis "normal" pour une simple annonce, ou "a inscription" pour afficher le bouton de reservation client.</span><button class="btn primary" data-action="save-event">Valider</button></div>
     `;
+  }
+
   if (type === "agenda") {
     const item = id ? (state.agenda || []).find(a => a.id === id) : agendaDefaults();
     return `
