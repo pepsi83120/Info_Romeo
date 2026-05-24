@@ -26,7 +26,7 @@ let toastTimer = null;
 let notificationSnapshot = localStorage.getItem(ADMIN_NOTIFICATION_SNAPSHOT_KEY) || "";
 let syncTimer = null;
 let filters = {
-  reservationStatus: ["all"],
+  reservationStatus: "all",
   reservationSuite: "all",
   reservationQuery: "",
   taskStatus: "all",
@@ -56,7 +56,19 @@ function startAdminApp() {
   syncServerState();
   clearInterval(syncTimer);
   syncTimer = setInterval(() => syncServerState(false), 20000);
-  checkExistingPushSubscription();
+  registerServiceWorker();
+}
+
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+    checkExistingPushSubscription();
+  } catch (err) {
+    console.warn("SW register error:", err);
+    checkExistingPushSubscription();
+  }
 }
 
 async function checkExistingPushSubscription() {
@@ -270,7 +282,6 @@ function bindGlobalEvents() {
 
   document.addEventListener("change", event => {
     const el = event.target;
-    if (el.dataset.reservationStatus) updateReservationStatuses(el);
     if (el.dataset.live) updateLive(el);
     if (el.dataset.filter) updateFilter(el);
   });
@@ -444,7 +455,7 @@ function renderHeader() {
     tasks: ["A faire", "Menage, maintenance et conciergerie terrain"],
     events: ["Nos animations", "Experiences et annonces visibles cote client"],
     agenda: ["Agenda ville", "Sorties, marches et activites autour de la villa"],
-    temperatures: ["Temperatures", "Piscine, air et mer pour la journee"],
+    temperatures: ["Temperatures", "Piscine, air et mer matin, apres-midi et soir"],
     messages: ["Messages", "Demandes voyageurs et priorites"],
     qr: ["QR Codes", "Portails invites par logement"],
     settings: ["Parametres", "Identite, contacts et preferences"]
@@ -743,7 +754,7 @@ function renderReservations() {
   const filtered = state.reservations.filter(r => {
     const query = filters.reservationQuery.toLowerCase();
     const suite = suiteName(r.suiteId).toLowerCase();
-    return reservationStatusMatches(computedReservationStatus(r))
+    return (filters.reservationStatus === "all" || computedReservationStatus(r) === filters.reservationStatus)
       && (filters.reservationSuite === "all" || Number(r.suiteId) === Number(filters.reservationSuite))
       && (!query || r.guest.toLowerCase().includes(query) || suite.includes(query) || r.channel.toLowerCase().includes(query));
   });
@@ -761,11 +772,11 @@ function renderReservations() {
         ${planningImportPanel()}
         <div class="table-tools">
           <div class="filters">
+            ${filterSelect("Statut", "reservationStatus", filters.reservationStatus, [["all","Tous"],["confirmed","Confirmee"],["inhouse","En sejour"],["checkout","Check-out"],["left","Sorti"],["raw","Sans description"]])}
             ${filterSelect("Logement", "reservationSuite", filters.reservationSuite, reservationSuiteOptions())}
             ${filterText("Recherche", "reservationQuery", filters.reservationQuery)}
           </div>
         </div>
-        ${reservationStatusPicker()}
         ${reservationTable(filtered)}
       </div>
     </div>
@@ -826,36 +837,6 @@ function reservationTable(items) {
       </table>
     </div>
   `;
-}
-
-function reservationStatusPicker() {
-  return `
-    <div class="status-picker">
-      <span>Statuts</span>
-      ${reservationStatusOptions().map(([key, label]) => `
-        <label>
-          <input type="checkbox" data-reservation-status="${key}" ${reservationStatuses().includes(key) ? "checked" : ""}>
-          ${label}
-        </label>
-      `).join("")}
-    </div>
-  `;
-}
-
-function reservationStatusOptions() {
-  return [["all", "Tous"], ["confirmed", "Confirmee"], ["inhouse", "En sejour"], ["checkout", "Check-out"], ["left", "Sorti"], ["raw", "Sans description"]];
-}
-
-function reservationStatuses() {
-  const selected = Array.isArray(filters.reservationStatus) ? filters.reservationStatus : [filters.reservationStatus || "all"];
-  const available = reservationStatusOptions().map(([key]) => key);
-  const visible = selected.filter(key => available.includes(key));
-  return visible.length ? visible : ["all"];
-}
-
-function reservationStatusMatches(status) {
-  const selected = reservationStatuses();
-  return selected.includes("all") || selected.includes(status);
 }
 
 
@@ -1183,13 +1164,13 @@ function renderTemperatures() {
       <div class="panel-head">
         <div>
           <div class="section-title">Releve temperatures</div>
-          <div class="section-copy">Mets a jour une temperature unique pour la piscine, l'air et la mer.</div>
+          <div class="section-copy">Mets a jour la piscine, l'air et la mer pour le matin, l'apres-midi et le soir.</div>
         </div>
         <button class="btn primary" data-action="save-temperatures"><i class="ti ti-device-floppy"></i>Enregistrer</button>
       </div>
       <div class="panel-body">
         <div class="temperature-table">
-          <div></div><div>Journee</div>
+          <div></div><div>Matin</div><div>Apres-midi</div><div>Soir</div>
           ${temperatureRow("pool", "Piscine", temperatures.pool)}
           ${temperatureRow("air", "Air", temperatures.air)}
           ${temperatureRow("sea", "Mer", temperatures.sea)}
@@ -1206,7 +1187,9 @@ function renderTemperatures() {
 function temperatureRow(key, label, values = {}) {
   return `
     <div class="temperature-label"><i class="ti ${temperatureIcon(key)}"></i>${label}</div>
-    ${field("", `temp-${key}-value`, temperatureValue(values), "number")}
+    ${field("", `temp-${key}-morning`, values.morning || "", "number")}
+    ${field("", `temp-${key}-afternoon`, values.afternoon || "", "number")}
+    ${field("", `temp-${key}-evening`, values.evening || "", "number")}
   `;
 }
 
@@ -1870,19 +1853,6 @@ function updateFilter(el) {
   render();
 }
 
-function updateReservationStatuses(el) {
-  const key = el.dataset.reservationStatus;
-  let selected = new Set(reservationStatuses());
-  if (key === "all" && el.checked) {
-    selected = new Set(["all"]);
-  } else {
-    selected.delete("all");
-    el.checked ? selected.add(key) : selected.delete(key);
-  }
-  filters.reservationStatus = selected.size ? Array.from(selected) : ["all"];
-  render();
-}
-
 function persist(message) {
   saveState(state);
   render();
@@ -2214,7 +2184,11 @@ function saveTemperatures() {
 }
 
 function readTemperatureGroup(key) {
-  return { value: val(`temp-${key}-value`) };
+  return {
+    morning: val(`temp-${key}-morning`),
+    afternoon: val(`temp-${key}-afternoon`),
+    evening: val(`temp-${key}-evening`)
+  };
 }
 
 function toggleEvent(id) {
@@ -2693,11 +2667,7 @@ function agendaDefaults() {
 }
 
 function temperatureDefaults() {
-  return { pool: { value: "" }, air: { value: "" }, sea: { value: "" }, updatedAt: "" };
-}
-
-function temperatureValue(values = {}) {
-  return values.value || values.afternoon || values.morning || values.evening || "";
+  return { pool: { morning: "", afternoon: "", evening: "" }, air: { morning: "", afternoon: "", evening: "" }, sea: { morning: "", afternoon: "", evening: "" }, updatedAt: "" };
 }
 
 function activeEventsCount() {
@@ -2732,7 +2702,7 @@ function eventDay(value) {
 }
 
 function temperatureIcon(key) {
-  return { pool: "ti-swimming", air: "ti-wind", sea: "ti-sailboat" }[key] || "ti-temperature";
+  return { pool: "ti-swimming", air: "ti-wind", sea: "ti-waves" }[key] || "ti-temperature";
 }
 
 function serviceDefaults() {
