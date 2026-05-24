@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1f979a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="La villa Roméo">
+  <title>La villa Roméo - Portail invité</title>
+  <link rel="manifest" href="./manifest.webmanifest?v=4">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png?v=4">
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="./src/guest.css?v=4">
+</head>
+<body>
+  <div id="guestApp"></div>
+  <script>
+    (function () {
+      var key = "villa-romeo-cache-clean-v1";
+      if (!("serviceWorker" in navigator) || sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "done");
+      Promise.all([
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          return Promise.all(registrations.map(function (registration) { return registration.unregister(); }));
+        }),
+        window.caches ? caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (cacheKey) { return caches.delete(cacheKey); }));
+        }) : Promise.resolve()
+      ]).then(function () {
+        window.location.replace(window.location.pathname + "?clean=1");
+      }).catch(function () {});
+    })();
+  </script>
+  <script type="module" src="./src/guest.js?v=4"></script>
+</body>
+</html>
