@@ -102,7 +102,6 @@ function render() {
         </div>
         <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i><span>Installer l'appli</span></button>
         <div class="nav-actions">
-          <button class="btn icon" data-action="copy-wifi" aria-label="Copier Wi-Fi"><i class="ti ti-wifi"></i></button>
           <button class="btn icon notification-button" data-action="toggle-notifications" aria-label="Notifications">
             <i class="ti ti-bell"></i>
             <span class="notification-dot" ${notificationCount ? "" : "hidden"}></span>
