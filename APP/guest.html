@@ -19,6 +19,23 @@
 </head>
 <body>
   <div id="guestApp"></div>
+  <script>
+    (function () {
+      var key = "villa-romeo-cache-clean-v1";
+      if (!("serviceWorker" in navigator) || sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "done");
+      Promise.all([
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          return Promise.all(registrations.map(function (registration) { return registration.unregister(); }));
+        }),
+        window.caches ? caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (cacheKey) { return caches.delete(cacheKey); }));
+        }) : Promise.resolve()
+      ]).then(function () {
+        window.location.replace(window.location.pathname + "?clean=1");
+      }).catch(function () {});
+    })();
+  </script>
   <script type="module" src="./src/guest.js?v=4"></script>
 </body>
 </html>

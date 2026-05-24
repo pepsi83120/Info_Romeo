@@ -40,10 +40,6 @@ window.addEventListener("beforeinstallprompt", event => {
   installPromptEvent = event;
 });
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").catch(() => {});
-}
-
 function boot() {
   if (!isAdminAuthenticated) {
     renderLoginChoice();
